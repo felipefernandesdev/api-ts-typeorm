@@ -7,5 +7,9 @@ AppDataSource.initialize().then(() => {
 
   app.use(express.json());
   app.use(routes);
-  return app.listen(process.env.PORT, () => console.log('API is running'));
+  return app.listen(process.env.PORT, () =>
+    console.log(
+      `🚀 API is running at port: ${process.env.PORT}, 👉 process: ${process.pid}`,
+    ),
+  );
 });
