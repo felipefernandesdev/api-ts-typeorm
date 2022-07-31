@@ -82,6 +82,7 @@ export class RoomController {
       const rooms = await RoomRepository.find({
         relations: {
           subjects: true,
+          videos: true,
         },
       });
 
