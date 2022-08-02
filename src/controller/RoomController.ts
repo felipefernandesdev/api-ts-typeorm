@@ -2,94 +2,67 @@ import { Request, Response } from 'express';
 import { RoomRepository } from '../repositories/RoomRepository';
 import { VideoRepository } from '../repositories/VideoRepository';
 import { SubjectRepository } from '../repositories/SubjectRepository';
+import { BadRequestError, NotFoundError } from '../helpers/api-error';
 
 export class RoomController {
   async create(request: Request, response: Response) {
     const { name, description } = request.body;
-    if (!name)
-      return response.status(400).json({ message: 'name is required' });
-    try {
-      const newRoom = RoomRepository.create({ name, description });
-      await RoomRepository.save(newRoom);
+    if (!name) throw new BadRequestError('Not Found Room');
 
-      response
-        .status(201)
-        .json({ message: 'Room created successfully', data: newRoom });
-    } catch (error) {
-      console.log(error);
-      return response
-        .status(500)
-        .json({ error, message: 'internal server error' });
-    }
+    const newRoom = RoomRepository.create({ name, description });
+    await RoomRepository.save(newRoom);
+
+    response
+      .status(201)
+      .json({ message: 'Room created successfully', data: newRoom });
   }
 
   async createVideo(request: Request, response: Response) {
     const { title, url } = request.body;
     const { idRoom } = request.params;
 
-    try {
-      const room = await RoomRepository.findOneBy({ id: Number(idRoom) });
-      if (!room)
-        return response.status(404).json({ message: 'Room not found' });
+    const room = await RoomRepository.findOneBy({ id: Number(idRoom) });
+    if (!room) throw new NotFoundError('Not Found Room');
 
-      const newVideo = VideoRepository.create({
-        title,
-        url,
-        room,
-      });
-      await VideoRepository.save(newVideo);
+    const newVideo = VideoRepository.create({
+      title,
+      url,
+      room,
+    });
+    await VideoRepository.save(newVideo);
 
-      return response.status(201).json(newVideo);
-    } catch (error) {
-      console.log(error);
-      return response
-        .status(500)
-        .json({ error, message: 'internal server error' });
-    }
+    return response.status(201).json(newVideo);
   }
 
   async roomSubject(request: Request, response: Response) {
     const { subject_id } = request.body;
     const { idRoom } = request.params;
 
-    try {
-      const room = await RoomRepository.findOneBy({ id: Number(idRoom) });
-      if (!room)
-        return response.status(404).json({ message: 'Room not found' });
+    const room = await RoomRepository.findOneBy({ id: Number(idRoom) });
+    if (!room) throw new NotFoundError('Not Found Room');
 
-      const subject = await SubjectRepository.findOneBy({
-        id: Number(subject_id),
-      });
-      if (!subject)
-        return response.status(404).json({ message: 'Subject not found' });
-      const roomUpdate = {
-        ...room,
-        subjects: [subject],
-      };
-      await RoomRepository.save(roomUpdate);
+    const subject = await SubjectRepository.findOneBy({
+      id: Number(subject_id),
+    });
+    if (!subject) throw new NotFoundError('Not Found Subject');
 
-      return response.status(204).send();
-    } catch (error) {
-      console.log(error);
-      return response
-        .status(500)
-        .json({ error, message: 'internal server error' });
-    }
+    const roomUpdate = {
+      ...room,
+      subjects: [subject],
+    };
+    await RoomRepository.save(roomUpdate);
+
+    return response.status(204).send();
   }
 
   async list(request: Request, response: Response) {
-    try {
-      const rooms = await RoomRepository.find({
-        relations: {
-          subjects: true,
-          videos: true,
-        },
-      });
+    const rooms = await RoomRepository.find({
+      relations: {
+        subjects: true,
+        videos: true,
+      },
+    });
 
-      return response.status(200).json(rooms);
-    } catch (error) {
-      console.log(error);
-      return response.status(500).json({ message: 'internal server error' });
-    }
+    return response.status(200).json(rooms);
   }
 }
